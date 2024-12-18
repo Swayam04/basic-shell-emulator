@@ -50,10 +50,10 @@ def main():
 
 def type_handler(s, commands):
     command_name = s.removeprefix("type ")
-    if (full_path := find_file(command_name)) is not None:
-        print(f"{command_name} is {full_path}")
-    elif command_name in commands:
+    if command_name in commands and command_name != "cat":
         print(f"{command_name} is a shell builtin")
+    elif (full_path := find_file(command_name)) is not None:
+        print(f"{command_name} is {full_path}")
     else:
         print(f"{command_name}: not found")
 
