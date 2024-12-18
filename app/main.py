@@ -82,7 +82,7 @@ def cat_handler(s):
     for text in args:
         text = text[1:-1].split(" ")
         full_path = os.path.join(text[0].strip(), text[1].strip())
-        res = run_subprocess(full_path, None)
+        res = run_subprocess(full_path, [])
         print(res.strip())
 
 
