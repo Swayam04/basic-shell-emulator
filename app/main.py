@@ -26,7 +26,7 @@ def main():
         "exit": lambda c: sys.exit(0),
         "echo": lambda c: print(c.removeprefix("echo ").strip()),
         "type": lambda c: type_handler(c, commands),
-        "pwd": lambda c: os.getcwd()
+        "pwd": lambda c: print(os.getcwd())
     }
     while True:
         sys.stdout.write("$ ")
