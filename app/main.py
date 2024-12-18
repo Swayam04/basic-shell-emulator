@@ -80,7 +80,7 @@ def cat_handler(s):
     for path in args:
         with open(path) as f:
             content = f.read()
-            print(content, end=" ")
+            print(content, end="")
 
 
 
