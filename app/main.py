@@ -71,16 +71,15 @@ def echo_handler(s):
     content = s.removeprefix("echo ").strip()
     content = shlex.split(content)
     for text in content:
-        if text[0] in "'\"":
-            text = text[1:-1]
         print(text, end=" ")
     print()
 
 def cat_handler(s):
     s = s.removeprefix("cat ")
     args = shlex.split(s)
+    print(args)
     for text in args:
-        text = text[1:-1].split(" ")
+        text = text.split(" ")
         full_path = os.path.join(text[0].strip(), text[-1].strip())
         res = run_subprocess(full_path, [])
         print(res.strip())
