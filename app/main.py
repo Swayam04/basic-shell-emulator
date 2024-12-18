@@ -80,7 +80,8 @@ def cat_handler(s):
     args = shlex.split(s)
     for text in args:
         text = text[1:-1].split(" ")
-        res = run_subprocess(text[0].strip(), text[1:])
+        full_path = os.path.join(text[0].strip(), text[1].strip())
+        res = run_subprocess(full_path, None)
         print(res.strip())
 
 
