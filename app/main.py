@@ -77,12 +77,9 @@ def echo_handler(s):
 def cat_handler(s):
     s = s.removeprefix("cat ")
     args = shlex.split(s)
-    for text in args:
-        text = text.split(" ")
-        full_path = os.path.join(text[0].strip(), text[-1].strip())
-        with open(full_path) as f:
-            content = f.read()
-            print(content.strip(), end=" ")
+    for path in args:
+        res = run_subprocess(path, [])
+        print(res.strip(), end=" ")
 
 
 
