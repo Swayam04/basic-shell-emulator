@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+
 def is_executable(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
@@ -26,7 +27,8 @@ def main():
         "exit": lambda c: sys.exit(0),
         "echo": lambda c: print(c.removeprefix("echo ").strip()),
         "type": lambda c: type_handler(c, commands),
-        "pwd": lambda c: print(os.getcwd())
+        "pwd": lambda c: print(os.getcwd()),
+        "cd": lambda c: cd_handler(c)
     }
     while True:
         sys.stdout.write("$ ")
@@ -52,6 +54,13 @@ def type_handler(s, commands):
         print(f"{command_name} is {full_path}")
     else:
         print(f"{command_name}: not found")
+
+def cd_handler(s):
+    dir_path = s.removeprefix("cd ")
+    if os.path.isdir(dir_path):
+        os.chdir(dir_path)
+    else:
+        print(f"cd: {dir_path}: No such file or directory")
 
 if __name__ == "__main__":
     main()
