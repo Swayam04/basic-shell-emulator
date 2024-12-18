@@ -6,7 +6,7 @@ def main():
     while True:
         sys.stdout.write("$ ")
         s = input()
-        if s == "exit":
+        if s.startswith("exit"):
             break
         elif s.startswith("echo"):
             print(s.removeprefix("echo "))
