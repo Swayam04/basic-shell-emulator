@@ -78,11 +78,10 @@ def echo_handler(s):
 
 def cat_handler(s):
     args = shlex.split(s)
-    for path in args:
-        path = path.strip()[1:-1]
-        with open(path) as file:
-            file_content = file.read()
-            print(file_content, end=" ")
+    for text in args:
+        text = text[1:-1].split(" ")
+        res = run_subprocess(text[0].strip(), text[1:])
+        print(res.strip())
 
 
 
