@@ -69,9 +69,12 @@ def cd_handler(s):
 
 def echo_handler(s):
     content = s.removeprefix("echo ").strip()
-    if content[0] in "'\"":
-        content = content[1:-1]
-    print(content)
+    content = shlex.split(content)
+    for text in content:
+        if text[0] in "'\"":
+            text = text[1:-1]
+        print(text, end=" ")
+    print()
 
 def cat_handler(s):
     args = shlex.split(s)
