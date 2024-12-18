@@ -22,8 +22,8 @@ def main():
             command_name = s.removeprefix("type ")
             if command_name in commands:
                 print(f"{command_name} is a shell builtin")
-            elif find_file(command_name) is not None:
-                print(f"{command_name} is {find_file(command_name)}")
+            elif (full_path := find_file(command_name)) is not None:
+                print(f"{command_name} is {full_path}")
             else:
                 print(f"{command_name}: not found")
         else:
