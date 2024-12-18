@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 
 def find_file(filename):
@@ -8,6 +9,10 @@ def find_file(filename):
         if os.path.exists(full_path):
             return full_path
     return None
+
+def run_subprocess(full_path, args):
+    result = subprocess.run([full_path] + args, capture_output=True, text=True)
+    return result.stdout
 
 def main():
     commands = {"exit": 0, "echo": 1, "type": 2}
@@ -27,7 +32,13 @@ def main():
             else:
                 print(f"{command_name}: not found")
         else:
-            print(f"{s}: command not found")
+            args = s.split(" ")
+            full_path = find_file(args[0])
+            if full_path is not None:
+                output = run_subprocess(full_path, args[1:])
+                print(output)
+            else:
+                print(f"{s}: command not found")
 
 
 if __name__ == "__main__":
