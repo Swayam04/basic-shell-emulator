@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 import sys
 
@@ -25,10 +26,11 @@ def run_subprocess(full_path, args):
 def main():
     commands = {
         "exit": lambda c: sys.exit(0),
-        "echo": lambda c: print(c.removeprefix("echo ").strip()),
+        "echo": lambda c: echo_handler(c),
         "type": lambda c: type_handler(c, commands),
         "pwd": lambda c: print(os.getcwd()),
-        "cd": lambda c: cd_handler(c)
+        "cd": lambda c: cd_handler(c),
+        "cat": lambda c: cat_handler(c)
     }
     while True:
         sys.stdout.write("$ ")
@@ -64,6 +66,22 @@ def cd_handler(s):
             os.chdir(os.environ["HOME"])
         else:
             print(f"cd: {dir_path}: No such file or directory")
+
+def echo_handler(s):
+    content = s.removeprefix("echo ").strip()
+    if content[0] in "'\"":
+        content = content[1:-1]
+    print(content)
+
+def cat_handler(s):
+    args = shlex.split(s)
+    for path in args:
+        path = path.strip()[1:-1]
+        with open(path) as file:
+            file_content = file.read()
+            print(file_content, end=" ")
+
+
 
 if __name__ == "__main__":
     main()
