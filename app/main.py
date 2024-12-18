@@ -3,7 +3,6 @@ import shlex
 import subprocess
 import sys
 
-
 def is_executable(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
@@ -40,7 +39,7 @@ def main():
                 handler(s)
                 break
         else:
-            args = s.split(" ")
+            args = shlex.split(s)
             full_path = find_file(args[0])
             if full_path is not None:
                 output = run_subprocess(full_path, args[1:])
@@ -81,8 +80,6 @@ def cat_handler(s):
         with open(path) as f:
             content = f.read()
             print(content, end="")
-
-
 
 
 if __name__ == "__main__":
