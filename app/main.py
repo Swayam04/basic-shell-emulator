@@ -78,8 +78,9 @@ def cat_handler(s):
     s = s.removeprefix("cat ")
     args = shlex.split(s)
     for path in args:
-        res = run_subprocess(path, [])
-        print(res.strip(), end=" ")
+        with open(path) as f:
+            content = f.read()
+            print(content, end=" ")
 
 
 
