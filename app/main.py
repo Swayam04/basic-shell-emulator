@@ -36,7 +36,7 @@ def main():
             full_path = find_file(args[0])
             if full_path is not None:
                 output = run_subprocess(full_path, args[1:])
-                print(output)
+                print(output.strip())
             else:
                 print(f"{s}: command not found")
 
