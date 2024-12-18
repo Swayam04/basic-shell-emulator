@@ -1,34 +1,129 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/ae9ea919-7822-4be6-9208-8b1bc8adde96)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Mini Shell
 
-This is a starting point for Python solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+A minimal shell environment written in Python. This script provides basic shell functionalities, including built-in commands and the ability to execute external programs.
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+---
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Features
 
-# Passing the first stage
+- Built-in commands:
+  - `echo`: Prints the given arguments to the standard output.
+  - `type`: Displays information about a command (e.g., if it is a shell built-in or an external program).
+  - `pwd`: Prints the current working directory.
+  - `cd`: Changes the current directory.
+  - `cat`: Prints the content of files to the standard output.
+  - `exit`: Exits the shell.
 
-The entry point for your `shell` implementation is in `app/main.py`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+- Executes external commands available in the system's PATH.
+- Robust error handling for invalid commands, missing files, and permission issues.
+- Graceful handling of keyboard interruptions (`Ctrl+C`) and end-of-input signals (`Ctrl+D`).
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
+## Usage
 
-Time to move on to the next stage!
+### Shell Commands
 
-# Stage 2 & beyond
+The shell supports the following commands:
 
-Note: This section is for stages 2 and beyond.
+1. **`echo [arguments...]`**
+   - Prints the arguments to the terminal.
+   - Example:
+     ```bash
+     $ echo Hello, World!
+     Hello, World!
+     ```
 
-1. Ensure you have `python (3.11)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.py`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+2. **`type [command]`**
+   - Displays information about a command (e.g., whether it is a shell built-in or an external program).
+   - Example:
+     ```bash
+     $ type echo
+     echo is a shell builtin
+     ```
+
+3. **`pwd`**
+   - Prints the current working directory.
+   - Example:
+     ```bash
+     $ pwd
+     /home/user
+     ```
+
+4. **`cd [directory]`**
+   - Changes the current working directory. Use `cd ~` to navigate to the home directory.
+   - Example:
+     ```bash
+     $ cd /path/to/directory
+     $ pwd
+     /path/to/directory
+     ```
+
+5. **`cat [file...]`**
+   - Prints the contents of one or more files to the terminal.
+   - Example:
+     ```bash
+     $ cat file1.txt file2.txt
+     [contents of file1.txt]
+     [contents of file2.txt]
+     ```
+
+6. **`exit`**
+   - Exits the shell.
+
+### External Commands
+
+- You can also run any external commands available in the system PATH:
+   ```bash
+   $ ls -l
+   [output of `ls -l`]
+   ```
+  
+## Installation
+
+To install and run the **Basic Shell Emulator**, follow these steps:
+
+### 1. Clone the repository
+
+- Clone the repository to your local machine using Git:
+   
+   ```bash
+   git clone git@github.com:Swayam04/basic-shell-emulator.git
+   cd basic-shell-emulator
+   ```
+
+### 2. **Install dependencies**
+
+- The project uses **Pipenv** for managing dependencies. Install the required Python dependencies using the following command:
+
+   ```bash
+   pipenv install
+   ```
+### 3. Run the shell emulator
+
+- Once the dependencies are installed, you can run the shell emulator using the provided `mini-shell.sh` script. This script will execute the Python code in the virtual environment:
+
+   ```bash
+   ./mini-shell.sh
+   ```
+### 4. (Optional) Running the shell without `mini-shell.sh`
+
+- If you don't want to use the `mini-shell.sh` script, you can run the Python script directly by using Pipenv:
+
+   ```bash
+   pipenv run python3 -u -m app.main
+   ```
+
+### 5. **Additional Notes**
+
+- **Platform Compatibility**: The shell should work on Linux and macOS. Windows users may need to adjust the script execution process to ensure compatibility with their environment.
+- **Dependencies**: The project uses **Pipenv** to manage dependencies. Make sure **Pipenv** is installed on your machine. If it isn't, you can install it with:
+  ```bash
+  pip install pipenv
+  ```
+- **Permissions**: Ensure that the mini-shell.sh script is executable. If not, you can make it executable using:
+   ```bash
+  chmod +x mini-shell.sh
+   ```
+## Acknowledgments
+This project was built as part of the Codecrafters challenge, with all implementation done independently.
+
+  

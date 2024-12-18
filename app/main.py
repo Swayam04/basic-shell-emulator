@@ -67,7 +67,7 @@ def main():
     commands = {
         "exit": lambda _: sys.exit(0),
         "echo": echo_handler,
-        "type": lambda args: type_handler(args, commands),
+        "type": lambda arg: type_handler(arg, commands),
         "pwd": lambda _: print(os.getcwd()),
         "cd": cd_handler,
         "cat": cat_handler,
