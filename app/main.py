@@ -9,9 +9,9 @@ def main():
         if s == "exit":
             break
         elif s.startswith("echo"):
-            print(s.lstrip("echo "))
+            print(s.removeprefix("echo "))
         elif s.startswith("type"):
-            command_name = s.lstrip("type ")
+            command_name = s.removeprefix("type ")
             if command_name in commands:
                 print(f"{command_name} is a shell builtin")
             else:
