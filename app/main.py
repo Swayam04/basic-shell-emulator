@@ -60,7 +60,10 @@ def cd_handler(s):
     if os.path.isdir(dir_path):
         os.chdir(dir_path)
     else:
-        print(f"cd: {dir_path}: No such file or directory")
+        if dir_path == "~":
+            os.chdir(os.environ["HOME"])
+        else:
+            print(f"cd: {dir_path}: No such file or directory")
 
 if __name__ == "__main__":
     main()
