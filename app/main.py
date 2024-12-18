@@ -77,6 +77,7 @@ def echo_handler(s):
     print()
 
 def cat_handler(s):
+    s = s.removeprefix("cat ")
     args = shlex.split(s)
     for text in args:
         text = text[1:-1].split(" ")
