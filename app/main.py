@@ -80,16 +80,30 @@ def handle_redirection(cmd_args):
     remaining_args = []
     it = iter(cmd_args)
     for arg in it:
-        if arg == '>' or arg.startswith('>'):
+        if arg == '>' or arg.endswith('>'):
             if arg == '>':
                 try:
-                    redirect_file = next(it)
+                    _, filename = next(it)
+                    redirect_file = filename
                 except StopIteration:
-                    return cmd_args, None  # Invalid syntax, no file specified
+                    print("Error: No file specified for redirection.")
+                    return cmd_args, None
             else:
-                redirect_file = arg[1:]
-        else:
-            remaining_args.append(arg)
+                parts = arg.split('>', 1)
+                if len(parts) == 2 and parts[1] == '':
+                    try:
+                        _, filename = next(it)
+                        redirect_file = filename
+                    except StopIteration:
+                        print(f"Error: No file specified for redirection in '{arg}'.")
+                        return cmd_args, None
+                elif len(parts) == 2:
+                    redirect_file = parts[1]
+                else:
+                    print(f"Error: Invalid redirection operator '{arg}'.")
+                    return cmd_args, None
+            remaining_args = cmd_args[:i]
+            break
     return remaining_args, redirect_file
 
 
