@@ -82,7 +82,7 @@ def cat_handler(args):
 
 def handle_redirection(cmd_args):
     """
-    Parse and handle command redirection for stdout (>, 1>) and stderr (2>).
+    Parse and handle command redirection for stdout (>, 1>) and stderr (2>> or 2>).
     Returns a tuple of (remaining_args, stdout_file, stderr_file, modes)
     """
     stdout_file = None
@@ -95,33 +95,60 @@ def handle_redirection(cmd_args):
     while i < len(cmd_args):
         arg = cmd_args[i]
 
+        # Handle stdout append ('>>' or '1>>')
         if arg in ('>>', '1>>'):
-            try:
+            if i + 1 < len(cmd_args):
                 stdout_file = cmd_args[i + 1]
                 stdout_mode = 'a'
-                i += 2
-            except IndexError:
+                i += 2  # Skip the filename
+            else:
                 print("Error: No file specified for stdout redirection.", file=sys.stderr)
                 break
+
+        # Handle stdout overwrite ('>' or '1>')
         elif arg in ('>', '1>'):
-            try:
+            if i + 1 < len(cmd_args):
                 stdout_file = cmd_args[i + 1]
                 stdout_mode = 'w'
-                i += 2
-            except IndexError:
+                i += 2  # Skip the filename
+            else:
                 print("Error: No file specified for stdout redirection.", file=sys.stderr)
                 break
-        elif arg.startswith('2>>'):
-            stdout_file = None
+
+        # Handle stderr append ('2>>')
+        elif arg == '2>>':
+            if i + 1 < len(cmd_args):
+                stderr_file = cmd_args[i + 1]
+                stderr_mode = 'a'
+                i += 2  # Skip the filename
+            else:
+                print("Error: No file specified for stderr redirection.", file=sys.stderr)
+                break
+
+        # Handle stderr overwrite ('2>')
+        elif arg == '2>':
+            if i + 1 < len(cmd_args):
+                stderr_file = cmd_args[i + 1]
+                stderr_mode = 'w'
+                i += 2  # Skip the filename
+            else:
+                print("Error: No file specified for stderr redirection.", file=sys.stderr)
+                break
+
+        # Handle combined stderr append (e.g., '2>>/path/to/file')
+        elif arg.startswith('2>>') and len(arg) > 3:
             stderr_file = arg[3:]
             stderr_mode = 'a'
             i += 1
-        elif arg.startswith('2>'):
-            stdout_file = None
+
+        # Handle combined stderr overwrite (e.g., '2>/path/to/file')
+        elif arg.startswith('2>') and len(arg) > 2:
             stderr_file = arg[2:]
             stderr_mode = 'w'
             i += 1
+
         else:
+            # If the argument is not a redirection operator, add it to remaining_args
             remaining_args.append(arg)
             i += 1
 
@@ -169,6 +196,7 @@ def main():
             if cmd in commands:
                 stdout, stderr = commands[cmd](filtered_args)
 
+                # Handle stdout redirection
                 if stdout_file:
                     write_to_file(stdout_file, stdout, modes['stdout'])
                 else:
@@ -176,6 +204,7 @@ def main():
                         print(stdout, end='')
                         sys.stdout.flush()
 
+                # Handle stderr redirection
                 if stderr_file:
                     write_to_file(stderr_file, stderr, modes['stderr'])
                 else:
@@ -188,6 +217,7 @@ def main():
                 if full_path:
                     stdout, stderr = run_subprocess(full_path, filtered_args)
 
+                    # Handle stdout redirection
                     if stdout_file:
                         write_to_file(stdout_file, stdout, modes['stdout'])
                     else:
@@ -195,6 +225,7 @@ def main():
                             print(stdout, end='')
                             sys.stdout.flush()
 
+                    # Handle stderr redirection
                     if stderr_file:
                         write_to_file(stderr_file, stderr, modes['stderr'])
                     else:
