@@ -137,7 +137,6 @@ def main():
         "type": lambda a: type_handler(a, commands),
         "pwd": lambda a: os.getcwd(),
         "cd": cd_handler,
-        "cat": cat_handler,
     }
 
     while True:
