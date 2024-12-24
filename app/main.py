@@ -82,13 +82,28 @@ def main():
             args = shlex.split(user_input)
             cmd, *cmd_args = args
 
+            redirect_file = None
+
+            for i in range(0, len(cmd_args)):
+                if '>' in cmd_args[i]:
+                    redirect_file = cmd_args[i + 1]
+                    cmd_args = cmd_args[:i]
+                    break
+
             if cmd in commands:
-                commands[cmd](cmd_args)
+                if redirect_file:
+                    output = commands[cmd](cmd_args)
+                    write_to_file(redirect_file, output)
+                else:
+                    commands[cmd](cmd_args)
             else:
                 full_path = find_file(cmd)
                 if full_path:
                     output = run_subprocess(full_path, cmd_args)
-                    print(output)
+                    if redirect_file:
+                        write_to_file(redirect_file, output)
+                    else:
+                        print(output)
                 else:
                     print(f"{cmd}: command not found")
         except KeyboardInterrupt:
@@ -96,6 +111,15 @@ def main():
         except EOFError:
             print()
             sys.exit(0)
+
+def write_to_file(filename, content):
+    try:
+        with open(filename, 'w') as f:
+            f.write(content)
+    except FileNotFoundError:
+        print(f"{filename}: No such file or directory")
+    except PermissionError:
+        print(f"{filename}: Permission denied")
 
 if __name__ == "__main__":
     main()
