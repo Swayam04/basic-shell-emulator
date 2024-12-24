@@ -1,12 +1,14 @@
-import os
 import io
+import os
 import shlex
 import subprocess
 import sys
 
+
 def is_executable(path):
     """Check if the given path is an executable file."""
     return os.path.isfile(path) and os.access(path, os.X_OK)
+
 
 def find_file(filename):
     """Find an executable file in the system PATH."""
@@ -16,6 +18,7 @@ def find_file(filename):
             return full_path
     return None
 
+
 def run_subprocess(command, args):
     """Run a subprocess with the given command and arguments."""
     try:
@@ -24,9 +27,11 @@ def run_subprocess(command, args):
     except subprocess.CalledProcessError as e:
         return f"Error running {command}: {e.stderr.strip()}"
 
+
 def echo_handler(args):
     """Handle the `echo` command."""
     print(" ".join(args))
+
 
 def type_handler(args, commands):
     """Handle the `type` command."""
@@ -38,19 +43,17 @@ def type_handler(args, commands):
     else:
         print(f"{command_name}: not found")
 
+
 def cd_handler(args):
     """Handle the `cd` command."""
-    if len(args) == 0 or args[0] == "~":
-        target_dir = os.environ.get("HOME", "/")
-    else:
-        target_dir = args[0]
-
+    target_dir = os.environ.get("HOME", "/") if not args or args[0] == "~" else args[0]
     try:
         os.chdir(target_dir)
     except FileNotFoundError:
         print(f"cd: {target_dir}: No such file or directory")
     except PermissionError:
         print(f"cd: {target_dir}: Permission denied")
+
 
 def cat_handler(args):
     """Handle the `cat` command."""
@@ -63,50 +66,36 @@ def cat_handler(args):
         except PermissionError:
             print(f"cat: {path}: Permission denied")
 
+
 def handle_redirection(cmd_args):
     """
     Parse and handle command redirection for output (>).
     Returns tuple of (remaining_args, redirect_file)
     """
     redirect_file = None
-    remaining_args = cmd_args.copy()
+    if '>' in cmd_args:
+        idx = cmd_args.index('>')
+        if idx + 1 < len(cmd_args):
+            redirect_file = cmd_args[idx + 1]
+            cmd_args = cmd_args[:idx]
+    elif any(arg.startswith('>') for arg in cmd_args):
+        for arg in cmd_args:
+            if arg.startswith('>'):
+                redirect_file = arg[1:]
+                cmd_args = [a for a in cmd_args if a != arg]
+                break
+    return cmd_args, redirect_file
 
-    for i, arg in enumerate(cmd_args):
-        if arg == '>' or arg.startswith('>'):
-            if arg == '>':
-                if i + 1 < len(cmd_args):
-                    redirect_file = cmd_args[i + 1]
-                    remaining_args = cmd_args[:i]
-            else:
-                redirect_file = arg[1:].strip()
-                remaining_args = cmd_args[:i]
-            break
-    return remaining_args, redirect_file
 
 def write_to_file(filename, content):
     """Write content to a file."""
     try:
         with open(filename, 'w') as f:
-            f.write(str(content))
-            if not str(content).endswith('\n'):
-                f.write('\n')
+            f.write(content if content.endswith('\n') else content + '\n')
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory")
     except PermissionError:
         print(f"Error: {filename}: Permission denied")
-
-def capture_output(func, args):
-    """Capture the output of a function that normally prints to stdout."""
-    captured_output = io.StringIO()
-    old_stdout = sys.stdout
-    sys.stdout = captured_output
-    try:
-        func(args)
-        output = captured_output.getvalue()
-    finally:
-        sys.stdout = old_stdout
-        captured_output.close()
-    return output
 
 
 def main():
@@ -114,7 +103,7 @@ def main():
     commands = {
         "exit": lambda _: sys.exit(0),
         "echo": echo_handler,
-        "type": lambda arg: type_handler(arg, commands),
+        "type": lambda arguments: type_handler(arguments, commands),
         "pwd": lambda _: print(os.getcwd()),
         "cd": cd_handler,
         "cat": cat_handler,
@@ -135,15 +124,20 @@ def main():
             filtered_args, redirect_file = handle_redirection(cmd_args)
 
             if cmd in commands:
+                output = ""
                 if redirect_file:
-                    output = capture_output(commands[cmd], filtered_args)
+                    original_stdout = sys.stdout
+                    sys.stdout = temp_stdout = io.StringIO()
+                    commands[cmd](filtered_args)
+                    sys.stdout = original_stdout
+                    output = temp_stdout.getvalue()
                     write_to_file(redirect_file, output)
                 else:
                     commands[cmd](cmd_args)
             else:
                 full_path = find_file(cmd)
                 if full_path:
-                    output = run_subprocess(full_path, filtered_args if redirect_file else cmd_args)
+                    output = run_subprocess(full_path, filtered_args)
                     if redirect_file:
                         write_to_file(redirect_file, output)
                     else:
@@ -155,6 +149,7 @@ def main():
         except EOFError:
             print()
             sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
