@@ -190,6 +190,6 @@ To install and run the **Basic Shell Emulator**, follow these steps:
   chmod +x mini-shell.sh
    ```
 ## Acknowledgments
-This project was built as part of the Codecrafters challenge, with all implementation done independently.
+This project was built as part of the [Codecrafters challenge](https://app.codecrafters.io/courses/shell/introduction), with all implementation done independently.
 
   
