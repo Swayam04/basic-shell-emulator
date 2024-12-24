@@ -100,14 +100,12 @@ def capture_output(func, args):
     captured_output = io.StringIO()
     old_stdout = sys.stdout
     sys.stdout = captured_output
-
     try:
         func(args)
         output = captured_output.getvalue()
     finally:
         sys.stdout = old_stdout
         captured_output.close()
-
     return output
 
 
@@ -134,18 +132,18 @@ def main():
 
             cmd, *cmd_args = args
 
-            cmd_args, redirect_file = handle_redirection(cmd_args)
+            filtered_args, redirect_file = handle_redirection(cmd_args)
 
             if cmd in commands:
                 if redirect_file:
-                    output = capture_output(commands[cmd], cmd_args)
+                    output = capture_output(commands[cmd], filtered_args)
                     write_to_file(redirect_file, output)
                 else:
                     commands[cmd](cmd_args)
             else:
                 full_path = find_file(cmd)
                 if full_path:
-                    output = run_subprocess(full_path, cmd_args)
+                    output = run_subprocess(full_path, filtered_args if redirect_file else cmd_args)
                     if redirect_file:
                         write_to_file(redirect_file, output)
                     else:
