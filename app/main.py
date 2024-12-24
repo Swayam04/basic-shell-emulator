@@ -141,6 +141,18 @@ def handle_redirection(cmd_args):
         elif arg.startswith('2>') and len(arg) > 2:
             stderr_file, stderr_mode = arg[2:], 'w'
             i += 1
+        elif arg.startswith('1>>') and len(arg) > 3:
+            stdout_file, stdout_mode = arg[3:], 'a'
+            i += 1
+        elif arg.startswith('1>') and len(arg) > 2:
+            stdout_file, stdout_mode = arg[2:], 'w'
+            i += 1
+        elif arg.startswith('>>') and len(arg) > 2:
+            stdout_file, stdout_mode = arg[2:], 'a'
+            i += 1
+        elif arg.startswith('>') and len(arg) > 1:
+            stdout_file, stdout_mode = arg[1:], 'w'
+            i += 1
         else:
             remaining_args.append(arg)
             i += 1
