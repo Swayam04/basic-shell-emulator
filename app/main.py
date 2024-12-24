@@ -159,8 +159,6 @@ def write_to_file(filename, content, mode):
         if directory and not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
         with open(filename, mode) as f:
-            if mode == "a":
-                content = content + '\n' if not content.endswith('\n') else content
             f.write(content)
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory", file=sys.stderr)
@@ -199,11 +197,13 @@ def main():
                 else:
                     if stdout:
                         print(stdout, end='')
+                        sys.stdout.flush()
                 if stderr_file:
                     write_to_file(stderr_file, stderr, modes['stderr'])
                 else:
                     if stderr:
                         print(stderr, end='', file=sys.stderr)
+                        sys.stderr.flush()
 
             else:
                 full_path = find_file(cmd)
@@ -214,11 +214,13 @@ def main():
                     else:
                         if stdout:
                             print(stdout, end='')
+                            sys.stdout.flush()
                     if stderr_file:
                         write_to_file(stderr_file, stderr, modes['stderr'])
                     else:
                         if stderr:
                             print(stderr, end='', file=sys.stderr)
+                            sys.stderr.flush()
                 else:
                     error_message = f"{cmd}: command not found\n"
                     if stderr_file:
