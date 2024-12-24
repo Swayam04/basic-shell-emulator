@@ -1,8 +1,8 @@
-import io
 import os
 import shlex
 import subprocess
 import sys
+import io
 
 
 def is_executable(path):
@@ -30,18 +30,20 @@ def run_subprocess(command, args):
 
 def echo_handler(args):
     """Handle the `echo` command."""
-    print(" ".join(args))
+    return " ".join(args)
 
 
 def type_handler(args, commands):
     """Handle the `type` command."""
+    if not args:
+        return "type: missing argument"
     command_name = args[0]
     if command_name in commands and command_name != "cat":
-        print(f"{command_name} is a shell builtin")
+        return f"{command_name} is a shell builtin"
     elif (full_path := find_file(command_name)) is not None:
-        print(f"{command_name} is {full_path}")
+        return f"{command_name} is {full_path}"
     else:
-        print(f"{command_name}: not found")
+        return f"{command_name}: not found"
 
 
 def cd_handler(args):
@@ -49,22 +51,25 @@ def cd_handler(args):
     target_dir = os.environ.get("HOME", "/") if not args or args[0] == "~" else args[0]
     try:
         os.chdir(target_dir)
+        return ""
     except FileNotFoundError:
-        print(f"cd: {target_dir}: No such file or directory")
+        return f"cd: {target_dir}: No such file or directory"
     except PermissionError:
-        print(f"cd: {target_dir}: Permission denied")
+        return f"cd: {target_dir}: Permission denied"
 
 
 def cat_handler(args):
     """Handle the `cat` command."""
+    output = ""
     for path in args:
         try:
             with open(path, 'r') as f:
-                print(f.read(), end="")
+                output += f.read()
         except FileNotFoundError:
-            print(f"cat: {path}: No such file or directory")
+            output += f"cat: {path}: No such file or directory\n"
         except PermissionError:
-            print(f"cat: {path}: Permission denied")
+            output += f"cat: {path}: Permission denied\n"
+    return output
 
 
 def handle_redirection(cmd_args):
@@ -73,18 +78,20 @@ def handle_redirection(cmd_args):
     Returns tuple of (remaining_args, redirect_file)
     """
     redirect_file = None
-    if '>' in cmd_args:
-        idx = cmd_args.index('>')
-        if idx + 1 < len(cmd_args):
-            redirect_file = cmd_args[idx + 1]
-            cmd_args = cmd_args[:idx]
-    elif any(arg.startswith('>') for arg in cmd_args):
-        for arg in cmd_args:
-            if arg.startswith('>'):
+    remaining_args = []
+    it = iter(cmd_args)
+    for arg in it:
+        if arg == '>' or arg.startswith('>'):
+            if arg == '>':
+                try:
+                    redirect_file = next(it)
+                except StopIteration:
+                    return cmd_args, None  # Invalid syntax, no file specified
+            else:
                 redirect_file = arg[1:]
-                cmd_args = [a for a in cmd_args if a != arg]
-                break
-    return cmd_args, redirect_file
+        else:
+            remaining_args.append(arg)
+    return remaining_args, redirect_file
 
 
 def write_to_file(filename, content):
@@ -101,10 +108,10 @@ def write_to_file(filename, content):
 def main():
     """Main function to run the shell."""
     commands = {
-        "exit": lambda _: sys.exit(0),
+        "exit": lambda arguments: sys.exit(0),
         "echo": echo_handler,
         "type": lambda arguments: type_handler(arguments, commands),
-        "pwd": lambda _: print(os.getcwd()),
+        "pwd": lambda arguments: os.getcwd(),
         "cd": cd_handler,
         "cat": cat_handler,
     }
@@ -124,16 +131,12 @@ def main():
             filtered_args, redirect_file = handle_redirection(cmd_args)
 
             if cmd in commands:
-                output = ""
-                if redirect_file:
-                    original_stdout = sys.stdout
-                    sys.stdout = temp_stdout = io.StringIO()
-                    commands[cmd](filtered_args)
-                    sys.stdout = original_stdout
-                    output = temp_stdout.getvalue()
-                    write_to_file(redirect_file, output)
-                else:
-                    commands[cmd](cmd_args)
+                output = commands[cmd](filtered_args)
+                if output:
+                    if redirect_file:
+                        write_to_file(redirect_file, output)
+                    else:
+                        print(output)
             else:
                 full_path = find_file(cmd)
                 if full_path:
