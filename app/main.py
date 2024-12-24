@@ -57,18 +57,18 @@ def cd_handler(args):
         return f"cd: {target_dir}: Permission denied"
 
 
-def cat_handler(args):
-    """Handle the `cat` command."""
-    output = ""
-    for path in args:
-        try:
-            with open(path, 'r') as f:
-                output += f.read()
-        except FileNotFoundError:
-            output += f"cat: {path}: No such file or directory\n"
-        except PermissionError:
-            output += f"cat: {path}: Permission denied\n"
-    return output
+# def cat_handler(args):
+#     """Handle the `cat` command."""
+#     output = ""
+#     for path in args:
+#         try:
+#             with open(path, 'r') as f:
+#                 output += f.read()
+#         except FileNotFoundError:
+#             output += f"cat: {path}: No such file or directory\n"
+#         except PermissionError:
+#             output += f"cat: {path}: Permission denied\n"
+#     return output
 
 
 def handle_redirection(cmd_args):
