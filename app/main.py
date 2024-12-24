@@ -122,7 +122,7 @@ def write_to_file(filename, content):
     try:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
-            f.write(content if content.endswith('\n') else content + '\n')
+            f.write(content)
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory")
     except PermissionError:
