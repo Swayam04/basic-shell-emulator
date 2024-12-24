@@ -88,67 +88,64 @@ def handle_redirection(cmd_args):
     stdout_file = None
     stderr_file = None
     remaining_args = []
+    mode = ''
     i = 0
+
+    def get_redirect_file(current_index, operator):
+        """Helper function to get the redirected filename."""
+        argument = cmd_args[current_index]
+        if argument == operator:
+            try:
+                return cmd_args[current_index + 1], 2
+            except IndexError:
+                print(f"Error: No file specified for {operator} redirection.", file=sys.stderr)
+                return None, 0
+
+        parts = argument.split('>', 1)
+        if len(parts) == 2 and parts[1]:
+            return parts[1], 1
+
+        try:
+            return cmd_args[current_index + 1], 2
+        except IndexError:
+            print(f"Error: No file specified for redirection in '{argument}'.", file=sys.stderr)
+            return None, 0
 
     while i < len(cmd_args):
         arg = cmd_args[i]
-        if arg == '>' or arg.startswith('1>'):
-            # Handle '>' and '1>' for stdout
-            if arg == '>':
-                try:
-                    stdout_file = cmd_args[i + 1]
-                    i += 2
-                except IndexError:
-                    print("Error: No file specified for stdout redirection.", file=sys.stderr)
-                    return cmd_args, None, None
-            else:
-                parts = arg.split('>', 1)
-                if len(parts) == 2 and parts[1]:
-                    stdout_file = parts[1]
-                    i += 1
-                else:
-                    try:
-                        stdout_file = cmd_args[i + 1]
-                        i += 2
-                    except IndexError:
-                        print(f"Error: No file specified for redirection in '{arg}'.", file=sys.stderr)
-                        return cmd_args, None, None
-            continue
-        elif arg.startswith('2>'):
-            if arg == '2>':
-                try:
-                    stderr_file = cmd_args[i + 1]
-                    i += 2
-                except IndexError:
-                    print("Error: No file specified for stderr redirection.", file=sys.stderr)
-                    return cmd_args, None, None
-            else:
-                parts = arg.split('>', 1)
-                if len(parts) == 2 and parts[1]:
-                    stderr_file = parts[1]
-                    i += 1
-                else:
-                    try:
-                        stderr_file = cmd_args[i + 1]
-                        i += 2
-                    except IndexError:
-                        print(f"Error: No file specified for redirection in '{arg}'.", file=sys.stderr)
-                        return cmd_args, None, None
-            continue
+        if '>>' in arg:
+            mode = 'a'
         else:
+            mode = 'w'
+        if arg.startswith('>') or arg.startswith('1>'):
+            filename, offset = get_redirect_file(i, '>')
+            if filename is None:
+                return cmd_args, None, None
+            stdout_file = filename
+            i += offset
+
+        elif arg.startswith('2>'):
+            filename, offset = get_redirect_file(i, '2>')
+            if filename is None:
+                return cmd_args, None, None
+            stderr_file = filename
+            i += offset
+
+        else:
+            mode = ''
             remaining_args.append(arg)
             i += 1
 
-    return remaining_args, stdout_file, stderr_file
+    return remaining_args, stdout_file, stderr_file, mode
 
 
-def write_to_file(filename, content):
+def write_to_file(filename, content, mode):
     """Write content to a file."""
     try:
         directory = os.path.dirname(filename)
         if directory and not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
-        with open(filename, 'w') as f:
+        with open(filename, mode) as f:
             f.write(content)
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory", file=sys.stderr)
@@ -178,17 +175,17 @@ def main():
                 continue
 
             cmd, *cmd_args = args
-            filtered_args, stdout_file, stderr_file = handle_redirection(cmd_args)
+            filtered_args, stdout_file, stderr_file, mode = handle_redirection(cmd_args)
 
             if cmd in commands:
                 stdout, stderr = commands[cmd](filtered_args)
                 if stdout_file:
-                    write_to_file(stdout_file, stdout)
+                    write_to_file(stdout_file, stdout, mode)
                 else:
                     if stdout:
                         print(stdout, end='')
                 if stderr_file:
-                    write_to_file(stderr_file, stderr)
+                    write_to_file(stderr_file, stderr, mode)
                 else:
                     if stderr:
                         print(stderr, end='', file=sys.stderr)
@@ -198,19 +195,19 @@ def main():
                 if full_path:
                     stdout, stderr = run_subprocess(full_path, filtered_args)
                     if stdout_file:
-                        write_to_file(stdout_file, stdout)
+                        write_to_file(stdout_file, stdout, mode)
                     else:
                         if stdout:
                             print(stdout, end='')
                     if stderr_file:
-                        write_to_file(stderr_file, stderr)
+                        write_to_file(stderr_file, stderr, mode)
                     else:
                         if stderr:
                             print(stderr, end='', file=sys.stderr)
                 else:
                     error_message = f"{cmd}: command not found\n"
                     if stderr_file:
-                        write_to_file(stderr_file, error_message)
+                        write_to_file(stderr_file, error_message, mode)
                     else:
                         print(error_message, end='', file=sys.stderr)
 
