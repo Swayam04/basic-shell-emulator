@@ -15,6 +15,7 @@ A minimal shell environment written in Python. This script provides basic shell 
   - `exit`: Exits the shell.
 
 - Executes external commands available in the system's PATH.
+- Redirecting/appending of command outputs into files
 - Robust error handling for invalid commands, missing files, and permission issues.
 - Graceful handling of keyboard interruptions (`Ctrl+C`) and end-of-input signals (`Ctrl+D`).
 
@@ -76,6 +77,71 @@ The shell supports the following commands:
    $ ls -l
    [output of `ls -l`]
    ```
+
+### Redirection
+
+The shell supports standard output and error redirection for commands. You can redirect the output of both built-in and external commands to files.
+
+### Standard Output Redirection
+
+- **Overwrite existing file (`>` or `1>`)**:
+  ```bash
+  $ echo "Hello, World!" > output.txt
+  ```
+  This command will write "Hello, World!" to `output.txt`, overwriting any existing content.
+
+- **Append to existing file (`>>` or `1>>`)**:
+  ```bash
+  $ echo "Hello, again!" >> output.txt
+  ```
+  This command will append "Hello, again!" to `output.txt`.
+
+### Standard Error Redirection
+
+- **Overwrite existing file (`2>`)**:
+  ```bash
+  $ cat non_existent_file 2> error.log
+  ```
+  This command will redirect the error message to `error.log`, overwriting any existing content.
+
+- **Append to existing file (`2>>`)**:
+  ```bash
+  $ cat non_existent_file 2>> error.log
+  ```
+  This command will append the error message to `error.log`.
+
+### Combined Standard Output and Error Redirection
+
+- **Redirect both stdout and stderr to separate files**:
+  ```bash
+  $ command > output.log 2> error.log
+  ```
+  This redirects standard output to `output.log` and standard error to `error.log`.
+
+### Examples
+
+1. **Save command output**:
+   ```bash
+   $ pwd > current_directory.txt
+   ```
+
+2. **Log errors**:
+   ```bash
+   $ cat missing_file.txt 2> error_log.txt
+   ```
+
+3. **Append multiple outputs**:
+   ```bash
+   $ echo "Line 1" >> log.txt
+   $ echo "Line 2" >> log.txt
+   ```
+
+4. **Save both output and errors**:
+   ```bash
+   $ ls /some/path > output.log 2> errors.log
+   ```
+
+Note: The shell creates directories automatically if they don't exist when redirecting output to a file in a non-existent directory.
   
 ## Installation
 

@@ -5,10 +5,22 @@ import sys
 
 
 def is_executable(path):
+    """Check if the given path is an executable file.
+        Args:
+            path (str): The path to the file.
+        Returns:
+            bool: True if the file is executable, False otherwise.
+    """
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
 
 def find_file(filename):
+    """Find an executable file in the system PATH.
+        Args:
+            filename (str): The name of the file to find.
+        Returns:
+            str: The full path to the executable file if found, None otherwise.
+    """
     for directory in os.environ["PATH"].split(os.pathsep):
         full_path = os.path.join(directory, filename)
         if is_executable(full_path):
@@ -17,6 +29,13 @@ def find_file(filename):
 
 
 def run_subprocess(command, args):
+    """Run a subprocess with the given command and arguments.
+        Args:
+            command (str): The command to run.
+            args (list): A list of arguments for the command.
+        Returns:
+            tuple: A tuple containing the stdout and stderr output of the command.
+    """
     try:
         result = subprocess.run([command] + args, capture_output=True, text=True, check=True)
         return result.stdout, result.stderr
@@ -25,10 +44,23 @@ def run_subprocess(command, args):
 
 
 def echo_handler(args):
+    """Handle the `echo` command.
+        Args:
+            args (list): A list of arguments passed to the `echo` command.
+        Returns:
+            tuple: A tuple containing the stdout and stderr output of the command.
+    """
     return " ".join(args) + "\n", ""
 
 
 def type_handler(args, commands):
+    """Handle the `type` command.
+        Args:
+            args (list): A list of arguments passed to the `type` command.
+            commands (dict): A dictionary of available commands.
+        Returns:
+            tuple: A tuple containing the stdout and stderr output of the command.
+    """
     if not args:
         return "", "type: missing argument\n"
     command_name = args[0]
@@ -41,6 +73,12 @@ def type_handler(args, commands):
 
 
 def cd_handler(args):
+    """Handle the `cd` command.
+        Args:
+            args (list): A list of arguments passed to the `cd` command.
+        Returns:
+            tuple: A tuple containing the stdout and stderr output of the command.
+    """
     target_dir = os.environ.get("HOME", "/") if not args or args[0] == "~" else args[0]
     try:
         os.chdir(target_dir)
@@ -52,6 +90,12 @@ def cd_handler(args):
 
 
 def cat_handler(args):
+    """Handle the `cat` command.
+        Args:
+            args (list): A list of file paths to concatenate and display.
+        Returns:
+            tuple: A tuple containing the stdout and stderr output of the command.
+    """
     stdout, stderr = "", ""
     for path in args:
         try:
@@ -65,6 +109,12 @@ def cat_handler(args):
 
 
 def handle_redirection(cmd_args):
+    """Parse and handle command redirection for stdout (>, 1>) and stderr (2>> or 2>).
+        Args:
+            cmd_args (list): A list of command arguments including potential redirection operators.
+        Returns:
+            tuple: A tuple containing remaining arguments, stdout file, stderr file, and modes for redirection.
+    """
     stdout_file, stderr_file = None, None
     remaining_args = []
     stdout_mode, stderr_mode = 'w', 'w'
@@ -99,6 +149,12 @@ def handle_redirection(cmd_args):
 
 
 def write_to_file(filename, content, mode):
+    """Write content to a file.
+        Args:
+            filename (str): The path to the file.
+            content (str): The content to write to the file.
+            mode (str): The mode to open the file in, e.g., 'w' for write, 'a' for append.
+    """
     try:
         directory = os.path.dirname(filename)
         if directory and not os.path.exists(directory):
@@ -112,6 +168,7 @@ def write_to_file(filename, content, mode):
 
 
 def main():
+    """Main function to run the shell."""
     commands = {
         "exit": lambda arguments: sys.exit(0),
         "echo": echo_handler,
