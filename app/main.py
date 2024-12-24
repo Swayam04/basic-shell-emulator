@@ -115,7 +115,7 @@ def main():
 def write_to_file(filename, content):
     try:
         with open(filename, 'w') as f:
-            f.write(content)
+            f.write(content + "\n")
     except FileNotFoundError:
         print(f"{filename}: No such file or directory")
     except PermissionError:
