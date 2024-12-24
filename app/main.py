@@ -83,7 +83,7 @@ def cat_handler(args):
 def handle_redirection(cmd_args):
     """
     Parse and handle command redirection for stdout (>, 1>) and stderr (2>).
-    Returns a tuple of (remaining_args, stdout_file, stderr_file, mode)
+    Returns a tuple of (remaining_args, stdout_file, stderr_file, modes)
     """
     stdout_file = None
     stderr_file = None
@@ -92,59 +92,35 @@ def handle_redirection(cmd_args):
     stderr_mode = 'w'
     i = 0
 
-    def get_redirect_file(current_index, operator):
-        """Helper function to get the redirected filename."""
-        argument = cmd_args[current_index]
-
-        if argument == operator or argument == operator + operator[-1]:  # Handles '>' and '>>'
-            try:
-                return cmd_args[current_index + 1], 2
-            except IndexError:
-                print(f"Error: No file specified for {operator} redirection.", file=sys.stderr)
-                return None, 0
-
-        parts = argument.split('>', 1)
-        if len(parts) == 2:
-            return parts[1], 1
-
-        try:
-            return cmd_args[current_index + 1], 2
-        except IndexError:
-            print(f"Error: No file specified for redirection in '{argument}'.", file=sys.stderr)
-            return None, 0
-
     while i < len(cmd_args):
         arg = cmd_args[i]
 
-        if arg == '>>' or arg.startswith('1>>'):
-            filename, offset = get_redirect_file(i, '>')
-            if filename is None:
-                return cmd_args, None, None, 'w'
-            stdout_file = filename
-            stdout_mode = 'a'
-            i += offset
-        elif arg == '>' or arg.startswith('1>'):
-            filename, offset = get_redirect_file(i, '>')
-            if filename is None:
-                return cmd_args, None, None, 'w'
-            stdout_file = filename
-            stdout_mode = 'w'
-            i += offset
+        if arg in ('>>', '1>>'):
+            try:
+                stdout_file = cmd_args[i + 1]
+                stdout_mode = 'a'
+                i += 2
+            except IndexError:
+                print("Error: No file specified for stdout redirection.", file=sys.stderr)
+                break
+        elif arg in ('>', '1>'):
+            try:
+                stdout_file = cmd_args[i + 1]
+                stdout_mode = 'w'
+                i += 2
+            except IndexError:
+                print("Error: No file specified for stdout redirection.", file=sys.stderr)
+                break
         elif arg.startswith('2>>'):
-            filename, offset = get_redirect_file(i, '2>')
-            if filename is None:
-                return cmd_args, None, None, 'w'
-            stderr_file = filename
+            stdout_file = None
+            stderr_file = arg[3:]
             stderr_mode = 'a'
-            i += offset
+            i += 1
         elif arg.startswith('2>'):
-            filename, offset = get_redirect_file(i, '2>')
-            if filename is None:
-                return cmd_args, None, None, 'w'
-            stderr_file = filename
+            stdout_file = None
+            stderr_file = arg[2:]
             stderr_mode = 'w'
-            i += offset
-
+            i += 1
         else:
             remaining_args.append(arg)
             i += 1
@@ -197,13 +173,11 @@ def main():
                 else:
                     if stdout:
                         print(stdout, end='')
-                        sys.stdout.flush()
                 if stderr_file:
                     write_to_file(stderr_file, stderr, modes['stderr'])
                 else:
                     if stderr:
                         print(stderr, end='', file=sys.stderr)
-                        sys.stderr.flush()
 
             else:
                 full_path = find_file(cmd)
@@ -214,13 +188,11 @@ def main():
                     else:
                         if stdout:
                             print(stdout, end='')
-                            sys.stdout.flush()
                     if stderr_file:
                         write_to_file(stderr_file, stderr, modes['stderr'])
                     else:
                         if stderr:
                             print(stderr, end='', file=sys.stderr)
-                            sys.stderr.flush()
                 else:
                     error_message = f"{cmd}: command not found\n"
                     if stderr_file:
