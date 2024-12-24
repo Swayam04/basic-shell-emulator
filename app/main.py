@@ -159,6 +159,8 @@ def write_to_file(filename, content, mode):
         if directory and not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
         with open(filename, mode) as f:
+            if mode == "a":
+                content = content + '\n' if not content.endswith('\n') else content
             f.write(content)
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory", file=sys.stderr)
