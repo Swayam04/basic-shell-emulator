@@ -2,7 +2,6 @@ import os
 import shlex
 import subprocess
 import sys
-import io
 
 
 def is_executable(path):
@@ -98,7 +97,7 @@ def write_to_file(filename, content):
     """Write content to a file."""
     try:
         with open(filename, 'w') as f:
-            f.write(content if content.endswith('\n') else content + '\n')
+            f.write(content)
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory")
     except PermissionError:
