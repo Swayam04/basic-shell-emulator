@@ -168,12 +168,14 @@ def main():
 
             if cmd in commands:
                 stdout, stderr = commands[cmd](filtered_args)
+
                 if stdout_file:
                     write_to_file(stdout_file, stdout, modes['stdout'])
                 else:
                     if stdout:
                         print(stdout, end='')
                         sys.stdout.flush()
+
                 if stderr_file:
                     write_to_file(stderr_file, stderr, modes['stderr'])
                 else:
@@ -185,12 +187,14 @@ def main():
                 full_path = find_file(cmd)
                 if full_path:
                     stdout, stderr = run_subprocess(full_path, filtered_args)
+
                     if stdout_file:
                         write_to_file(stdout_file, stdout, modes['stdout'])
                     else:
                         if stdout:
                             print(stdout, end='')
                             sys.stdout.flush()
+
                     if stderr_file:
                         write_to_file(stderr_file, stderr, modes['stderr'])
                     else:
