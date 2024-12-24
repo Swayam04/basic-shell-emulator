@@ -173,11 +173,13 @@ def main():
                 else:
                     if stdout:
                         print(stdout, end='')
+                        sys.stdout.flush()
                 if stderr_file:
                     write_to_file(stderr_file, stderr, modes['stderr'])
                 else:
                     if stderr:
                         print(stderr, end='', file=sys.stderr)
+                        sys.stderr.flush()
 
             else:
                 full_path = find_file(cmd)
@@ -188,11 +190,13 @@ def main():
                     else:
                         if stdout:
                             print(stdout, end='')
+                            sys.stdout.flush()
                     if stderr_file:
                         write_to_file(stderr_file, stderr, modes['stderr'])
                     else:
                         if stderr:
                             print(stderr, end='', file=sys.stderr)
+                            sys.stderr.flush()
                 else:
                     error_message = f"{cmd}: command not found\n"
                     if stderr_file:
