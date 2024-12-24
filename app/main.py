@@ -5,12 +5,10 @@ import sys
 
 
 def is_executable(path):
-    """Check if the given path is an executable file."""
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
 
 def find_file(filename):
-    """Find an executable file in the system PATH."""
     for directory in os.environ["PATH"].split(os.pathsep):
         full_path = os.path.join(directory, filename)
         if is_executable(full_path):
@@ -19,26 +17,18 @@ def find_file(filename):
 
 
 def run_subprocess(command, args):
-    """Run a subprocess with the given command and arguments."""
     try:
-        result = subprocess.run([command] + args,
-                                capture_output=True,
-                                text=True,
-                                check=True)
+        result = subprocess.run([command] + args, capture_output=True, text=True, check=True)
         return result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr
 
 
 def echo_handler(args):
-    """Handle the `echo` command."""
-    stdout = " ".join(args) + "\n"  # Ensuring a newline at the end
-    stderr = ""
-    return stdout, stderr
+    return " ".join(args) + "\n", ""
 
 
 def type_handler(args, commands):
-    """Handle the `type` command."""
     if not args:
         return "", "type: missing argument\n"
     command_name = args[0]
@@ -51,11 +41,7 @@ def type_handler(args, commands):
 
 
 def cd_handler(args):
-    """Handle the `cd` command."""
-    if not args or args[0] == "~":
-        target_dir = os.environ.get("HOME", "/")
-    else:
-        target_dir = args[0]
+    target_dir = os.environ.get("HOME", "/") if not args or args[0] == "~" else args[0]
     try:
         os.chdir(target_dir)
         return "", ""
@@ -66,9 +52,7 @@ def cd_handler(args):
 
 
 def cat_handler(args):
-    """Handle the `cat` command."""
-    stdout = ""
-    stderr = ""
+    stdout, stderr = "", ""
     for path in args:
         try:
             with open(path, 'r') as f:
@@ -81,74 +65,33 @@ def cat_handler(args):
 
 
 def handle_redirection(cmd_args):
-    """
-    Parse and handle command redirection for stdout (>, 1>) and stderr (2>> or 2>).
-    Returns a tuple of (remaining_args, stdout_file, stderr_file, modes)
-    """
-    stdout_file = None
-    stderr_file = None
+    stdout_file, stderr_file = None, None
     remaining_args = []
-    stdout_mode = 'w'
-    stderr_mode = 'w'
+    stdout_mode, stderr_mode = 'w', 'w'
     i = 0
 
     while i < len(cmd_args):
         arg = cmd_args[i]
 
-        # Handle stdout append ('>>' or '1>>')
         if arg in ('>>', '1>>'):
-            if i + 1 < len(cmd_args):
-                stdout_file = cmd_args[i + 1]
-                stdout_mode = 'a'
-                i += 2  # Skip the filename
-            else:
-                print("Error: No file specified for stdout redirection.", file=sys.stderr)
-                break
-
-        # Handle stdout overwrite ('>' or '1>')
+            stdout_file, stdout_mode = cmd_args[i + 1], 'a'
+            i += 2
         elif arg in ('>', '1>'):
-            if i + 1 < len(cmd_args):
-                stdout_file = cmd_args[i + 1]
-                stdout_mode = 'w'
-                i += 2  # Skip the filename
-            else:
-                print("Error: No file specified for stdout redirection.", file=sys.stderr)
-                break
-
-        # Handle stderr append ('2>>')
+            stdout_file, stdout_mode = cmd_args[i + 1], 'w'
+            i += 2
         elif arg == '2>>':
-            if i + 1 < len(cmd_args):
-                stderr_file = cmd_args[i + 1]
-                stderr_mode = 'a'
-                i += 2  # Skip the filename
-            else:
-                print("Error: No file specified for stderr redirection.", file=sys.stderr)
-                break
-
-        # Handle stderr overwrite ('2>')
+            stderr_file, stderr_mode = cmd_args[i + 1], 'a'
+            i += 2
         elif arg == '2>':
-            if i + 1 < len(cmd_args):
-                stderr_file = cmd_args[i + 1]
-                stderr_mode = 'w'
-                i += 2  # Skip the filename
-            else:
-                print("Error: No file specified for stderr redirection.", file=sys.stderr)
-                break
-
-        # Handle combined stderr append (e.g., '2>>/path/to/file')
+            stderr_file, stderr_mode = cmd_args[i + 1], 'w'
+            i += 2
         elif arg.startswith('2>>') and len(arg) > 3:
-            stderr_file = arg[3:]
-            stderr_mode = 'a'
+            stderr_file, stderr_mode = arg[3:], 'a'
             i += 1
-
-        # Handle combined stderr overwrite (e.g., '2>/path/to/file')
         elif arg.startswith('2>') and len(arg) > 2:
-            stderr_file = arg[2:]
-            stderr_mode = 'w'
+            stderr_file, stderr_mode = arg[2:], 'w'
             i += 1
-
         else:
-            # If the argument is not a redirection operator, add it to remaining_args
             remaining_args.append(arg)
             i += 1
 
@@ -156,7 +99,6 @@ def handle_redirection(cmd_args):
 
 
 def write_to_file(filename, content, mode):
-    """Write content to a file."""
     try:
         directory = os.path.dirname(filename)
         if directory and not os.path.exists(directory):
@@ -170,7 +112,6 @@ def write_to_file(filename, content, mode):
 
 
 def main():
-    """Main function to run the shell."""
     commands = {
         "exit": lambda arguments: sys.exit(0),
         "echo": echo_handler,
@@ -195,49 +136,22 @@ def main():
 
             if cmd in commands:
                 stdout, stderr = commands[cmd](filtered_args)
-
-                # Handle stdout redirection
-                if stdout_file:
-                    write_to_file(stdout_file, stdout, modes['stdout'])
-                else:
-                    if stdout:
-                        print(stdout, end='')
-                        sys.stdout.flush()
-
-                # Handle stderr redirection
-                if stderr_file:
-                    write_to_file(stderr_file, stderr, modes['stderr'])
-                else:
-                    if stderr:
-                        print(stderr, end='', file=sys.stderr)
-                        sys.stderr.flush()
-
             else:
                 full_path = find_file(cmd)
                 if full_path:
                     stdout, stderr = run_subprocess(full_path, filtered_args)
-
-                    # Handle stdout redirection
-                    if stdout_file:
-                        write_to_file(stdout_file, stdout, modes['stdout'])
-                    else:
-                        if stdout:
-                            print(stdout, end='')
-                            sys.stdout.flush()
-
-                    # Handle stderr redirection
-                    if stderr_file:
-                        write_to_file(stderr_file, stderr, modes['stderr'])
-                    else:
-                        if stderr:
-                            print(stderr, end='', file=sys.stderr)
-                            sys.stderr.flush()
                 else:
-                    error_message = f"{cmd}: command not found\n"
-                    if stderr_file:
-                        write_to_file(stderr_file, error_message, modes['stderr'])
-                    else:
-                        print(error_message, end='', file=sys.stderr)
+                    stdout, stderr = "", f"{cmd}: command not found\n"
+
+            if stdout_file:
+                write_to_file(stdout_file, stdout, modes['stdout'])
+            elif stdout:
+                print(stdout, end='')
+
+            if stderr_file:
+                write_to_file(stderr_file, stderr, modes['stderr'])
+            elif stderr:
+                print(stderr, end='', file=sys.stderr)
 
         except KeyboardInterrupt:
             print()
