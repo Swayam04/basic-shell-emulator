@@ -21,122 +21,150 @@ def find_file(filename):
 def run_subprocess(command, args):
     """Run a subprocess with the given command and arguments."""
     try:
-        result = subprocess.run([command] + args, capture_output=True, text=True, check=True)
-        return result.stdout.strip()
+        result = subprocess.run([command] + args,
+                                capture_output=True,
+                                text=True,
+                                check=True)
+        return result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
-        return f"Error running {command}: {e.stderr.strip()}"
+        return e.stdout, e.stderr
 
 
 def echo_handler(args):
     """Handle the `echo` command."""
-    return " ".join(args)
+    stdout = " ".join(args) + "\n"  # Ensuring a newline at the end
+    stderr = ""
+    return stdout, stderr
 
 
 def type_handler(args, commands):
     """Handle the `type` command."""
     if not args:
-        return "type: missing argument"
+        return "", "type: missing argument\n"
     command_name = args[0]
     if command_name in commands and command_name != "cat":
-        return f"{command_name} is a shell builtin"
+        return f"{command_name} is a shell builtin\n", ""
     elif (full_path := find_file(command_name)) is not None:
-        return f"{command_name} is {full_path}"
+        return f"{command_name} is {full_path}\n", ""
     else:
-        return f"{command_name}: not found"
+        return "", f"{command_name}: not found\n"
 
 
 def cd_handler(args):
     """Handle the `cd` command."""
-    target_dir = os.environ.get("HOME", "/") if not args or args[0] == "~" else args[0]
+    if not args or args[0] == "~":
+        target_dir = os.environ.get("HOME", "/")
+    else:
+        target_dir = args[0]
     try:
         os.chdir(target_dir)
-        return ""
+        return "", ""
     except FileNotFoundError:
-        return f"cd: {target_dir}: No such file or directory"
+        return "", f"cd: {target_dir}: No such file or directory\n"
     except PermissionError:
-        return f"cd: {target_dir}: Permission denied"
+        return "", f"cd: {target_dir}: Permission denied\n"
 
 
-# def cat_handler(args):
-#     """Handle the `cat` command."""
-#     output = ""
-#     for path in args:
-#         try:
-#             with open(path, 'r') as f:
-#                 output += f.read()
-#         except FileNotFoundError:
-#             output += f"cat: {path}: No such file or directory\n"
-#         except PermissionError:
-#             output += f"cat: {path}: Permission denied\n"
-#     return output
+def cat_handler(args):
+    """Handle the `cat` command."""
+    stdout = ""
+    stderr = ""
+    for path in args:
+        try:
+            with open(path, 'r') as f:
+                stdout += f.read()
+        except FileNotFoundError:
+            stderr += f"cat: {path}: No such file or directory\n"
+        except PermissionError:
+            stderr += f"cat: {path}: Permission denied\n"
+    return stdout, stderr
 
 
 def handle_redirection(cmd_args):
     """
-    Parse and handle command redirection for output (> or 1>).
-    Returns tuple of (remaining_args, redirect_file)
+    Parse and handle command redirection for stdout (>, 1>) and stderr (2>).
+    Returns a tuple of (remaining_args, stdout_file, stderr_file)
     """
-    redirect_file = None
+    stdout_file = None
+    stderr_file = None
     remaining_args = []
-    it = iter(enumerate(cmd_args))
-    skip_next = False
+    i = 0
 
-    for i, arg in it:
-        if skip_next:
-            skip_next = False
-            continue
-
-        if arg == '>' or arg.endswith('>'):
+    while i < len(cmd_args):
+        arg = cmd_args[i]
+        if arg == '>' or arg.startswith('1>'):
+            # Handle '>' and '1>' for stdout
             if arg == '>':
                 try:
-                    _, filename = next(it)
-                    redirect_file = filename
-                except StopIteration:
-                    print("Error: No file specified for redirection.")
-                    return cmd_args, None
+                    stdout_file = cmd_args[i + 1]
+                    i += 2
+                except IndexError:
+                    print("Error: No file specified for stdout redirection.", file=sys.stderr)
+                    return cmd_args, None, None
             else:
                 parts = arg.split('>', 1)
-                if len(parts) == 2 and parts[1] == '':
-                    try:
-                        _, filename = next(it)
-                        redirect_file = filename
-                    except StopIteration:
-                        print(f"Error: No file specified for redirection in '{arg}'.")
-                        return cmd_args, None
-                elif len(parts) == 2:
-                    # e.g., '1>/path/to/file'
-                    redirect_file = parts[1]
+                if len(parts) == 2 and parts[1]:
+                    stdout_file = parts[1]
+                    i += 1
                 else:
-                    print(f"Error: Invalid redirection operator '{arg}'.")
-                    return cmd_args, None
-            remaining_args = cmd_args[:i]
-            break
+                    try:
+                        stdout_file = cmd_args[i + 1]
+                        i += 2
+                    except IndexError:
+                        print(f"Error: No file specified for redirection in '{arg}'.", file=sys.stderr)
+                        return cmd_args, None, None
+            continue
+        elif arg.startswith('2>'):
+            if arg == '2>':
+                try:
+                    stderr_file = cmd_args[i + 1]
+                    i += 2
+                except IndexError:
+                    print("Error: No file specified for stderr redirection.", file=sys.stderr)
+                    return cmd_args, None, None
+            else:
+                parts = arg.split('>', 1)
+                if len(parts) == 2 and parts[1]:
+                    stderr_file = parts[1]
+                    i += 1
+                else:
+                    try:
+                        stderr_file = cmd_args[i + 1]
+                        i += 2
+                    except IndexError:
+                        print(f"Error: No file specified for redirection in '{arg}'.", file=sys.stderr)
+                        return cmd_args, None, None
+            continue
         else:
             remaining_args.append(arg)
+            i += 1
 
-    return remaining_args, redirect_file
+    return remaining_args, stdout_file, stderr_file
 
 
 def write_to_file(filename, content):
     """Write content to a file."""
     try:
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        directory = os.path.dirname(filename)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
         with open(filename, 'w') as f:
             f.write(content)
     except FileNotFoundError:
-        print(f"Error: {filename}: No such file or directory")
+        print(f"Error: {filename}: No such file or directory", file=sys.stderr)
     except PermissionError:
-        print(f"Error: {filename}: Permission denied")
+        print(f"Error: {filename}: Permission denied", file=sys.stderr)
 
 
 def main():
     """Main function to run the shell."""
     commands = {
-        "exit": lambda a: sys.exit(0),
+        "exit": lambda arguments: sys.exit(0),
         "echo": echo_handler,
-        "type": lambda a: type_handler(a, commands),
-        "pwd": lambda a: os.getcwd(),
+        "type": lambda arguments: type_handler(arguments, commands),
+        "pwd": lambda arguments: (os.getcwd() + "\n", ""),
         "cd": cd_handler,
+        "cat": cat_handler,
     }
 
     while True:
@@ -150,26 +178,42 @@ def main():
                 continue
 
             cmd, *cmd_args = args
-
-            filtered_args, redirect_file = handle_redirection(cmd_args)
+            filtered_args, stdout_file, stderr_file = handle_redirection(cmd_args)
 
             if cmd in commands:
-                output = commands[cmd](filtered_args)
-                if output:
-                    if redirect_file:
-                        write_to_file(redirect_file, output)
-                    else:
-                        print(output)
+                stdout, stderr = commands[cmd](filtered_args)
+                if stdout_file:
+                    write_to_file(stdout_file, stdout)
+                else:
+                    if stdout:
+                        print(stdout, end='')
+                if stderr_file:
+                    write_to_file(stderr_file, stderr)
+                else:
+                    if stderr:
+                        print(stderr, end='', file=sys.stderr)
+
             else:
                 full_path = find_file(cmd)
                 if full_path:
-                    output = run_subprocess(full_path, filtered_args)
-                    if redirect_file:
-                        write_to_file(redirect_file, output)
+                    stdout, stderr = run_subprocess(full_path, filtered_args)
+                    if stdout_file:
+                        write_to_file(stdout_file, stdout)
                     else:
-                        print(output)
+                        if stdout:
+                            print(stdout, end='')
+                    if stderr_file:
+                        write_to_file(stderr_file, stderr)
+                    else:
+                        if stderr:
+                            print(stderr, end='', file=sys.stderr)
                 else:
-                    print(f"{cmd}: command not found")
+                    error_message = f"{cmd}: command not found\n"
+                    if stderr_file:
+                        write_to_file(stderr_file, error_message)
+                    else:
+                        print(error_message, end='', file=sys.stderr)
+
         except KeyboardInterrupt:
             print()
         except EOFError:
