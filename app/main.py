@@ -73,13 +73,19 @@ def cat_handler(args):
 
 def handle_redirection(cmd_args):
     """
-    Parse and handle command redirection for output (>).
+    Parse and handle command redirection for output (> or 1>).
     Returns tuple of (remaining_args, redirect_file)
     """
     redirect_file = None
     remaining_args = []
-    it = iter(cmd_args)
-    for arg in it:
+    it = iter(enumerate(cmd_args))
+    skip_next = False
+
+    for i, arg in it:
+        if skip_next:
+            skip_next = False
+            continue
+
         if arg == '>' or arg.endswith('>'):
             if arg == '>':
                 try:
@@ -98,20 +104,25 @@ def handle_redirection(cmd_args):
                         print(f"Error: No file specified for redirection in '{arg}'.")
                         return cmd_args, None
                 elif len(parts) == 2:
+                    # e.g., '1>/path/to/file'
                     redirect_file = parts[1]
                 else:
                     print(f"Error: Invalid redirection operator '{arg}'.")
                     return cmd_args, None
             remaining_args = cmd_args[:i]
             break
+        else:
+            remaining_args.append(arg)
+
     return remaining_args, redirect_file
 
 
 def write_to_file(filename, content):
     """Write content to a file."""
     try:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
-            f.write(content)
+            f.write(content if content.endswith('\n') else content + '\n')
     except FileNotFoundError:
         print(f"Error: {filename}: No such file or directory")
     except PermissionError:
@@ -121,10 +132,10 @@ def write_to_file(filename, content):
 def main():
     """Main function to run the shell."""
     commands = {
-        "exit": lambda arguments: sys.exit(0),
+        "exit": lambda a: sys.exit(0),
         "echo": echo_handler,
-        "type": lambda arguments: type_handler(arguments, commands),
-        "pwd": lambda arguments: os.getcwd(),
+        "type": lambda a: type_handler(a, commands),
+        "pwd": lambda a: os.getcwd(),
         "cd": cd_handler,
         "cat": cat_handler,
     }
