@@ -15,7 +15,7 @@ A minimal shell environment written in Python. This script provides basic shell 
   - `exit`: Exits the shell.
 
 - Executes external commands available in the system's PATH.
-- Redirecting/appending of command outputs into files
+- Redirecting/appending of command outputs and or errors into files.
 - Robust error handling for invalid commands, missing files, and permission issues.
 - Graceful handling of keyboard interruptions (`Ctrl+C`) and end-of-input signals (`Ctrl+D`).
 
