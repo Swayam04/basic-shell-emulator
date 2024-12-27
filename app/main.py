@@ -180,7 +180,11 @@ def write_to_file(filename, content, mode):
 
 
 def main():
-    """Main function to run the shell."""
+    """Main function to run the shell.
+        Supports 'exit', 'echo', 'type', 'pwd', 'cd', 'cat' as shell built-ins.
+        Supports other bash commands as executables.
+        Supports output and error redirection to files.
+    """
     commands = {
         "exit": lambda arguments: sys.exit(0),
         "echo": echo_handler,
