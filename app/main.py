@@ -181,7 +181,7 @@ def write_to_file(filename, content, mode):
 
 
 def command_completer(text, index):
-    commands = ["exit", "echo", "type", "pwd", "cd", "cat"]
+    commands = ["exit ", "echo ", "type ", "pwd ", "cd ", "cat "]
     matches = [command for command in commands if command.startswith(text)]
     return matches[index] if matches else None
 
