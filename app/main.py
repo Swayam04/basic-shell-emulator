@@ -25,7 +25,7 @@ def find_file(filename):
     for directory in os.environ["PATH"].split(os.pathsep):
         full_path = os.path.join(directory, filename)
         if is_executable(full_path):
-            return full_path
+            return filename
     return None
 
 
