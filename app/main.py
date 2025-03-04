@@ -182,8 +182,17 @@ def write_to_file(filename, content, mode):
 
 
 def command_completer(text, index):
+    """Completer provided to readline for built-in command autocompletion.
+        Supports 'exit', 'echo', 'type', 'pwd', 'cd', 'cat' as shell built-ins.
+    """
     commands = ["exit ", "echo ", "type ", "pwd ", "cd ", "cat "]
     matches = [command for command in commands if command.startswith(text)]
+
+    if not matches and index == 0:
+        sys.stdout.write('\a')
+        sys.stdout.flush()
+        return None
+
     return matches[index] if matches else None
 
 readline.parse_and_bind("tab: complete")
