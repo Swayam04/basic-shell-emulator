@@ -1,4 +1,5 @@
 import os
+import readline
 import shlex
 import subprocess
 import sys
@@ -178,6 +179,14 @@ def write_to_file(filename, content, mode):
     except PermissionError:
         print(f"Error: {filename}: Permission denied", file=sys.stderr)
 
+
+def command_completer(text, index):
+    commands = ["exit", "echo", "type", "pwd", "cd", "cat"]
+    matches = [command for command in commands if command.startswith(text)]
+    return matches[index] if matches else None
+
+readline.parse_and_bind("tab: complete")
+readline.set_completer(command_completer)
 
 def main():
     """Main function to run the shell.
