@@ -38,7 +38,8 @@ def run_subprocess(command, args):
             tuple: A tuple containing the stdout and stderr output of the command.
     """
     try:
-        result = subprocess.run([command] + args, capture_output=True, text=True, check=True)
+        executable_name = os.path.basename(command)
+        result = subprocess.run([executable_name] + args, capture_output=True, text=True, check=True)
         return result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr
