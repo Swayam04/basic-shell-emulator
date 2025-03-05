@@ -191,18 +191,18 @@ def command_completer(text, state):
     matches_builtins = [cmd for cmd in builtins if cmd.startswith(text)]
     matches_executables = [cmd for cmd in executable_cache if cmd.startswith(text)]
 
-    all_matches = matches_builtins + matches_executables
-
-    if not all_matches and state == 0:
+    if not matches_builtins and not matches_executables and state == 0:
         sys.stdout.write('\a')
         sys.stdout.flush()
         return None
 
-    if state < len(all_matches):
-        completion = all_matches[state]
-        if len(all_matches) == 1:
-            return completion + " "
-        return completion
+    if matches_builtins:
+        return matches_builtins[state]
+    elif matches_executables:
+        if len(matches_executables) == 1:
+            return matches_executables[state] + " "
+        else:
+            return matches_executables[state]
     return None
 
 
