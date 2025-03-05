@@ -197,7 +197,7 @@ def command_completer(text, index):
     if matches:
         return matches[index]
     elif matches_executables:
-        return matches_executables[index]
+        return f"{matches_executables[index]} "
     return None
 
 readline.parse_and_bind("tab: complete")
