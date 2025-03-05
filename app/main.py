@@ -188,7 +188,6 @@ def command_completer(text, index):
     commands = ["exit", "echo", "type", "pwd", "cd", "cat"]
     matches = [command for command in commands if command.startswith(text)]
     matches_executables = [command for command in executable_cache if command.startswith(text)]
-
     all_matches = matches + matches_executables
 
     if not all_matches and index == 0:
@@ -197,8 +196,10 @@ def command_completer(text, index):
         return None
 
     if index < len(all_matches):
-        return all_matches[index] + " "
-
+        if len(all_matches) == 1:
+            return all_matches[index] + " "
+        else:
+            return all_matches[index]
     return None
 
 
