@@ -181,6 +181,8 @@ def write_to_file(filename, content, mode):
         print(f"Error: {filename}: Permission denied", file=sys.stderr)
 
 
+import sys
+
 def command_completer(text, index):
     """Completer for readline that supports built-in commands and executables."""
     commands = ["exit", "echo", "type", "pwd", "cd", "cat"]
@@ -195,12 +197,10 @@ def command_completer(text, index):
         return None
 
     if index < len(all_matches):
-        completion = all_matches[index]
-        if len(all_matches) == 1:
-            return completion + " "
-        return completion
+        return all_matches[index] + " "
 
     return None
+
 
 readline.parse_and_bind("tab: complete")
 readline.set_completer(command_completer)
