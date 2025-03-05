@@ -9,22 +9,23 @@ executable_cache = set()
 full_path_executable_cache = {}
 
 def get_executables():
-    """Find executable files in the system PATH and caches them
-    """
+    """Find executable files in the system PATH and cache them."""
     for directory in os.environ["PATH"].split(os.pathsep):
-        for filename in os.listdir(directory):
-            full_path = os.path.join(directory, filename)
-            if is_executable(full_path):
-                executable_cache.add(filename)
-                full_path_executable_cache[filename] = full_path
+        if not os.path.isdir(directory):
+            continue
+        try:
+            for filename in os.listdir(directory):
+                full_path = os.path.join(directory, filename)
+                if is_executable(full_path):
+                    executable_cache.add(filename)
+                    full_path_executable_cache[filename] = full_path
+        except FileNotFoundError:
+            print(f"Warning: Directory not found - {directory}")
+        except PermissionError:
+            print(f"Warning: Permission denied - {directory}")
 
 def is_executable(path):
-    """Check if the given path is an executable file.
-        Args:
-            path (str): The path to the file.
-        Returns:
-            bool: True if the file is executable, False otherwise.
-    """
+    """Check if the given path is an executable file."""
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
 
