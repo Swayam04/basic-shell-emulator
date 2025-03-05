@@ -1,23 +1,72 @@
 # Mini Shell
 
-A minimal shell environment written in Python. This script provides basic shell functionalities, including built-in commands and the ability to execute external programs.
+A minimal shell environment written in Python. This script provides basic shell functionalities, including built-in
+commands and the ability to execute external programs.
 
 ---
 
 ## Features
 
 - Built-in commands:
-  - `echo`: Prints the given arguments to the standard output.
-  - `type`: Displays information about a command (e.g., if it is a shell built-in or an external program).
-  - `pwd`: Prints the current working directory.
-  - `cd`: Changes the current directory.
-  - `cat`: Prints the content of files to the standard output.
-  - `exit`: Exits the shell.
+    - `echo`: Prints the given arguments to the standard output.
+    - `type`: Displays information about a command (e.g., if it is a shell built-in or an external program).
+    - `pwd`: Prints the current working directory.
+    - `cd`: Changes the current directory.
+    - `cat`: Prints the content of files to the standard output.
+    - `exit`: Exits the shell.
 
 - Executes external commands available in the system's PATH.
-- Redirecting/appending of command outputs and or errors into files.
-- Robust error handling for invalid commands, missing files, and permission issues.
-- Graceful handling of keyboard interruptions (`Ctrl+C`) and end-of-input signals (`Ctrl+D`).
+- Redirecting/appending of command outputs and errors into files.
+- **Tab Completion**:
+    - Supports auto-completion for built-in commands and system executables
+    - Provides audio feedback (beep) when no match is found
+    - Automatically adds a space after unique command matches
+
+- **System Executable Discovery**:
+    - Automatically scans and caches executables from system PATH
+    - Handles potential errors like non-existent or inaccessible directories
+
+- Robust error handling for:
+    - Invalid commands
+    - Missing files
+    - Permission issues
+    - Directory navigation errors
+
+- Graceful handling of:
+    - Keyboard interruptions (`Ctrl+C`)
+    - End-of-input signals (`Ctrl+D`)
+
+## Additional Command Handling Details
+
+### Executable Type Identification
+
+- `type` command can:
+    - Identify shell built-in commands
+    - Locate full path of system executables
+    - Report when a command is not found
+
+### Working Directory Management
+
+- `cd` command supports:
+    - Navigating to specific directories
+    - Shortcut to home directory using `~`
+    - Provides informative error messages for invalid paths
+
+### File Reading
+
+- `cat` command can:
+    - Read multiple files
+    - Handle errors for non-existent or inaccessible files
+    - Concatenate contents of multiple files
+
+### Redirection Syntax Support
+
+Supports various redirection syntaxes:
+
+- Stdout: `>`, `>>`, `1>`, `1>>`
+- Stderr: `2>`, `2>>`
+- Compact forms: `>file`, `2>file`
+
 
 ## Usage
 
@@ -26,49 +75,49 @@ A minimal shell environment written in Python. This script provides basic shell 
 The shell supports the following commands:
 
 1. **`echo [arguments...]`**
-   - Prints the arguments to the terminal.
-   - Example:
-     ```bash
-     $ echo Hello, World!
-     Hello, World!
-     ```
+    - Prints the arguments to the terminal.
+    - Example:
+      ```bash
+      $ echo Hello, World!
+      Hello, World!
+      ```
 
 2. **`type [command]`**
-   - Displays information about a command (e.g., whether it is a shell built-in or an external program).
-   - Example:
-     ```bash
-     $ type echo
-     echo is a shell builtin
-     ```
+    - Displays information about a command (e.g., whether it is a shell built-in or an external program).
+    - Example:
+      ```bash
+      $ type echo
+      echo is a shell builtin
+      ```
 
 3. **`pwd`**
-   - Prints the current working directory.
-   - Example:
-     ```bash
-     $ pwd
-     /home/user
-     ```
+    - Prints the current working directory.
+    - Example:
+      ```bash
+      $ pwd
+      /home/user
+      ```
 
 4. **`cd [directory]`**
-   - Changes the current working directory. Use `cd ~` to navigate to the home directory.
-   - Example:
-     ```bash
-     $ cd /path/to/directory
-     $ pwd
-     /path/to/directory
-     ```
+    - Changes the current working directory. Use `cd ~` to navigate to the home directory.
+    - Example:
+      ```bash
+      $ cd /path/to/directory
+      $ pwd
+      /path/to/directory
+      ```
 
 5. **`cat [file...]`**
-   - Prints the contents of one or more files to the terminal.
-   - Example:
-     ```bash
-     $ cat file1.txt file2.txt
-     [contents of file1.txt]
-     [contents of file2.txt]
-     ```
+    - Prints the contents of one or more files to the terminal.
+    - Example:
+      ```bash
+      $ cat file1.txt file2.txt
+      [contents of file1.txt]
+      [contents of file2.txt]
+      ```
 
 6. **`exit`**
-   - Exits the shell.
+    - Exits the shell.
 
 ### External Commands
 
@@ -80,7 +129,8 @@ The shell supports the following commands:
 
 ### Redirection
 
-The shell supports standard output and error redirection for commands. You can redirect the output of both built-in and external commands to files.
+The shell supports standard output and error redirection for commands. You can redirect the output of both built-in and
+external commands to files.
 
 ### Standard Output Redirection
 
@@ -141,8 +191,9 @@ The shell supports standard output and error redirection for commands. You can r
    $ ls /some/path > output.log 2> errors.log
    ```
 
-Note: The shell creates directories automatically if they don't exist when redirecting output to a file in a non-existent directory.
-  
+Note: The shell creates directories automatically if they don't exist when redirecting output to a file in a
+non-existent directory.
+
 ## Installation
 
 To install and run the **Basic Shell Emulator**, follow these steps:
@@ -150,7 +201,7 @@ To install and run the **Basic Shell Emulator**, follow these steps:
 ### 1. Clone the repository
 
 - Clone the repository to your local machine using Git:
-   
+
    ```bash
    git clone git@github.com:Swayam04/basic-shell-emulator.git
    cd basic-shell-emulator
@@ -158,18 +209,22 @@ To install and run the **Basic Shell Emulator**, follow these steps:
 
 ### 2. **Install dependencies**
 
-- The project uses **Pipenv** for managing dependencies. Install the required Python dependencies using the following command:
+- The project uses **Pipenv** for managing dependencies. Install the required Python dependencies using the following
+  command:
 
    ```bash
    pipenv install
    ```
+
 ### 3. Run the shell emulator
 
-- Once the dependencies are installed, you can run the shell emulator using the provided `mini-shell.sh` script. This script will execute the Python code in the virtual environment:
+- Once the dependencies are installed, you can run the shell emulator using the provided `mini-shell.sh` script. This
+  script will execute the Python code in the virtual environment:
 
    ```bash
    ./mini-shell.sh
    ```
+
 ### 4. (Optional) Running the shell without `mini-shell.sh`
 
 - If you don't want to use the `mini-shell.sh` script, you can run the Python script directly by using Pipenv:
@@ -180,8 +235,10 @@ To install and run the **Basic Shell Emulator**, follow these steps:
 
 ### 5. **Additional Notes**
 
-- **Platform Compatibility**: The shell should work on Linux and macOS. Windows users may need to adjust the script execution process to ensure compatibility with their environment.
-- **Dependencies**: The project uses **Pipenv** to manage dependencies. Make sure **Pipenv** is installed on your machine. If it isn't, you can install it with:
+- **Platform Compatibility**: The shell should work on Linux and macOS. Windows users may need to adjust the script
+  execution process to ensure compatibility with their environment.
+- **Dependencies**: The project uses **Pipenv** to manage dependencies. Make sure **Pipenv** is installed on your
+  machine. If it isn't, you can install it with:
   ```bash
   pip install pipenv
   ```
@@ -189,7 +246,10 @@ To install and run the **Basic Shell Emulator**, follow these steps:
    ```bash
   chmod +x mini-shell.sh
    ```
+
 ## Acknowledgments
-This project was built as part of the [Codecrafters challenge](https://app.codecrafters.io/courses/shell/introduction), with all implementation done independently.
+
+This project was built as part of the [Codecrafters challenge](https://app.codecrafters.io/courses/shell/introduction),
+with all implementation done independently.
 
   
