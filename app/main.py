@@ -181,25 +181,28 @@ def write_to_file(filename, content, mode):
         print(f"Error: {filename}: Permission denied", file=sys.stderr)
 
 
-import sys
+def command_completer(text, state):
+    """
+    Completer for readline that supports built-in commands and executables.
+    When a single unique match is available, a trailing space is appended.
+    """
+    builtins = ["exit ", "echo ", "type ", "pwd ", "cd ", "cat "]
 
-def command_completer(text, index):
-    """Completer for readline that supports built-in commands and executables."""
-    commands = ["exit", "echo", "type", "pwd", "cd", "cat"]
-    matches = [command for command in commands if command.startswith(text)]
-    matches_executables = [command for command in executable_cache if command.startswith(text)]
-    all_matches = matches + matches_executables
+    matches_builtins = [cmd for cmd in builtins if cmd.startswith(text)]
+    matches_executables = [cmd for cmd in executable_cache if cmd.startswith(text)]
 
-    if not all_matches and index == 0:
+    all_matches = matches_builtins + matches_executables
+
+    if not all_matches and state == 0:
         sys.stdout.write('\a')
         sys.stdout.flush()
         return None
 
-    if index < len(all_matches):
+    if state < len(all_matches):
+        completion = all_matches[state]
         if len(all_matches) == 1:
-            return all_matches[index] + " "
-        else:
-            return all_matches[index]
+            return completion + " "
+        return completion
     return None
 
 
