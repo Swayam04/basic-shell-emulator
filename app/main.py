@@ -5,12 +5,17 @@ import subprocess
 import sys
 
 
+
 executable_cache = set()
 full_path_executable_cache = {}
 
+
 def get_executables():
-    """Find executable files in the system PATH and cache them."""
-    for directory in os.environ["PATH"].split(os.pathsep):
+    """
+    Populate the cache with system executables found in directories listed in the PATH environment variable.
+    This speeds up command lookup for the shell.
+    """
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
         if not os.path.isdir(directory):
             continue
         try:
@@ -24,18 +29,30 @@ def get_executables():
         except PermissionError:
             print(f"Warning: Permission denied - {directory}")
 
+
 def is_executable(path):
-    """Check if the given path is an executable file."""
+    """
+    Check if a given path corresponds to an executable file.
+
+    Args:
+        path (str): The file path to check.
+
+    Returns:
+        bool: True if the file is executable, False otherwise.
+    """
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
 
 def run_subprocess(command, args):
-    """Run a subprocess with the given command and arguments.
-        Args:
-            command (str): The command to run.
-            args (list): A list of arguments for the command.
-        Returns:
-            tuple: A tuple containing the stdout and stderr output of the command.
+    """
+    Run a subprocess with the given command and arguments.
+
+    Args:
+        command (str): The command to execute.
+        args (list): Arguments for the command.
+
+    Returns:
+        tuple: (stdout output, stderr output)
     """
     try:
         result = subprocess.run([command] + args, capture_output=True, text=True, check=True)
@@ -45,27 +62,35 @@ def run_subprocess(command, args):
 
 
 def echo_handler(args):
-    """Handle the `echo` command.
-        Args:
-            args (list): A list of arguments passed to the `echo` command.
-        Returns:
-            tuple: A tuple containing the stdout and stderr output of the command.
+    """
+    Implementation of the `echo` command.
+
+    Args:
+        args (list): Arguments to be echoed.
+
+    Returns:
+        tuple: (stdout output, stderr output)
     """
     return " ".join(args) + "\n", ""
 
 
 def type_handler(args, commands):
-    """Handle the `type` command.
-        Args:
-            args (list): A list of arguments passed to the `type` command.
-            commands (dict): A dictionary of available commands.
-        Returns:
-            tuple: A tuple containing the stdout and stderr output of the command.
+    """
+    Implementation of the `type` command.
+
+    Args:
+        args (list): List of command names to check.
+        commands (dict): Dictionary of built-in commands.
+
+    Returns:
+        tuple: (stdout output, stderr output)
     """
     if not args:
         return "", "type: missing argument\n"
+
     command_name = args[0]
     full_command = full_path_executable_cache.get(command_name)
+
     if command_name in commands and command_name != "cat":
         return f"{command_name} is a shell builtin\n", ""
     elif full_command:
@@ -75,13 +100,17 @@ def type_handler(args, commands):
 
 
 def cd_handler(args):
-    """Handle the `cd` command.
-        Args:
-            args (list): A list of arguments passed to the `cd` command.
-        Returns:
-            tuple: A tuple containing the stdout and stderr output of the command.
+    """
+    Implementation of the `cd` command.
+
+    Args:
+        args (list): Directory to change to.
+
+    Returns:
+        tuple: (stdout output, stderr output)
     """
     target_dir = os.environ.get("HOME", "/") if not args or args[0] == "~" else args[0]
+
     try:
         os.chdir(target_dir)
         return "", ""
@@ -92,13 +121,17 @@ def cd_handler(args):
 
 
 def cat_handler(args):
-    """Handle the `cat` command.
-        Args:
-            args (list): A list of file paths to concatenate and display.
-        Returns:
-            tuple: A tuple containing the stdout and stderr output of the command.
+    """
+    Implementation of the `cat` command.
+
+    Args:
+        args (list): List of file paths to read.
+
+    Returns:
+        tuple: (stdout output, stderr output)
     """
     stdout, stderr = "", ""
+
     for path in args:
         try:
             with open(path, 'r') as f:
@@ -107,19 +140,23 @@ def cat_handler(args):
             stderr += f"cat: {path}: No such file or directory\n"
         except PermissionError:
             stderr += f"cat: {path}: Permission denied\n"
+
     return stdout, stderr
 
 
 def handle_redirection(cmd_args):
-    """Parse and handle command redirection for stdout (>, 1>) and stderr (2>> or 2>).
-        Args:
-            cmd_args (list): A list of command arguments including potential redirection operators.
-        Returns:
-            tuple: A tuple containing remaining arguments, stdout file, stderr file, and modes for redirection.
+    """
+    Parse and handle output redirection.
+
+    Args:
+        cmd_args (list): Command arguments, including potential redirection operators.
+
+    Returns:
+        tuple: (remaining arguments, stdout file, stderr file, redirection modes)
     """
     stdout_file, stderr_file = None, None
-    remaining_args = []
     stdout_mode, stderr_mode = 'w', 'w'
+    remaining_args = []
     i = 0
 
     while i < len(cmd_args):
@@ -137,24 +174,6 @@ def handle_redirection(cmd_args):
         elif arg == '2>':
             stderr_file, stderr_mode = cmd_args[i + 1], 'w'
             i += 2
-        elif arg.startswith('2>>') and len(arg) > 3:
-            stderr_file, stderr_mode = arg[3:], 'a'
-            i += 1
-        elif arg.startswith('2>') and len(arg) > 2:
-            stderr_file, stderr_mode = arg[2:], 'w'
-            i += 1
-        elif arg.startswith('1>>') and len(arg) > 3:
-            stdout_file, stdout_mode = arg[3:], 'a'
-            i += 1
-        elif arg.startswith('1>') and len(arg) > 2:
-            stdout_file, stdout_mode = arg[2:], 'w'
-            i += 1
-        elif arg.startswith('>>') and len(arg) > 2:
-            stdout_file, stdout_mode = arg[2:], 'a'
-            i += 1
-        elif arg.startswith('>') and len(arg) > 1:
-            stdout_file, stdout_mode = arg[1:], 'w'
-            i += 1
         else:
             remaining_args.append(arg)
             i += 1
@@ -163,11 +182,13 @@ def handle_redirection(cmd_args):
 
 
 def write_to_file(filename, content, mode):
-    """Write content to a file.
-        Args:
-            filename (str): The path to the file.
-            content (str): The content to write to the file.
-            mode (str): The mode to open the file in, e.g., 'w' for write, 'a' for append.
+    """
+    Write content to a file.
+
+    Args:
+        filename (str): File path.
+        content (str): Content to write.
+        mode (str): File write mode.
     """
     try:
         directory = os.path.dirname(filename)
@@ -183,45 +204,52 @@ def write_to_file(filename, content, mode):
 
 def command_completer(text, state):
     """
-    Completer for readline that supports built-in commands and executables.
-    When a single unique match is available, a trailing space is appended.
+    Auto-completes shell commands using readline.
+
+    Args:
+        text (str): The command input by the user.
+        state (int): The state of the completion (e.g., first match, second match).
+
+    Returns:
+        str or None: Suggested completion or None if no match.
     """
     builtins = ["exit ", "echo ", "type ", "pwd ", "cd ", "cat "]
 
-    matches_builtins = [cmd for cmd in builtins if cmd.startswith(text)]
-    matches_executables = [cmd for cmd in executable_cache if cmd.startswith(text)]
+    matches = [cmd for cmd in builtins + list(executable_cache) if cmd.startswith(text)]
 
-    if not matches_builtins and not matches_executables and state == 0:
+    if not matches and state == 0:
         sys.stdout.write('\a')
         sys.stdout.flush()
         return None
 
-    if matches_builtins:
-        return matches_builtins[state]
-    elif matches_executables:
-        if len(matches_executables) == 1:
-            return matches_executables[state] + " "
-        else:
-            return matches_executables[state]
-    return None
+    return matches[state] if state < len(matches) else None
 
 
 readline.parse_and_bind("tab: complete")
 readline.set_completer(command_completer)
 
+
 def main():
-    """Main function to run the shell.
-        Supports 'exit', 'echo', 'type', 'pwd', 'cd', 'cat' as shell built-ins.
-        Supports other bash commands as executables.
-        Supports output and error redirection to files.
+    """
+    Main function for the shell.
+
+    Supports built-in commands:
+    - exit
+    - echo
+    - type
+    - pwd
+    - cd
+    - cat
+
+    Also supports external commands and output redirection.
     """
     get_executables()
 
     commands = {
-        "exit": lambda arguments: sys.exit(0),
+        "exit": lambda _: sys.exit(0),
         "echo": echo_handler,
-        "type": lambda arguments: type_handler(arguments, commands),
-        "pwd": lambda arguments: (os.getcwd() + "\n", ""),
+        "type": lambda args: type_handler(args, commands),
+        "pwd": lambda _: (os.getcwd() + "\n", ""),
         "cd": cd_handler,
         "cat": cat_handler,
     }
@@ -239,27 +267,19 @@ def main():
             cmd, *cmd_args = args
             filtered_args, stdout_file, stderr_file, modes = handle_redirection(cmd_args)
 
-            if cmd in commands:
-                stdout, stderr = commands[cmd](filtered_args)
-            else:
-                if cmd in executable_cache:
-                    stdout, stderr = run_subprocess(cmd, filtered_args)
-                else:
-                    stdout, stderr = "", f"{cmd}: command not found\n"
+            stdout, stderr = commands.get(cmd, lambda _: ("", f"{cmd}: command not found\n"))(filtered_args)
 
             if stdout_file:
                 write_to_file(stdout_file, stdout, modes['stdout'])
-            elif stdout:
+            else:
                 print(stdout, end='')
 
             if stderr_file:
                 write_to_file(stderr_file, stderr, modes['stderr'])
-            elif stderr:
+            else:
                 print(stderr, end='', file=sys.stderr)
 
-        except KeyboardInterrupt:
-            print()
-        except EOFError:
+        except (KeyboardInterrupt, EOFError):
             print()
             sys.exit(0)
 
