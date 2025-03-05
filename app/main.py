@@ -5,6 +5,19 @@ import subprocess
 import sys
 
 
+executable_cache = set()
+full_path_executable_cache = {}
+
+def get_executables():
+    """Find executable files in the system PATH and caches them
+    """
+    for directory in os.environ["PATH"].split(os.pathsep):
+        for filename in os.listdir(directory):
+            full_path = os.path.join(directory, filename)
+            if is_executable(full_path):
+                executable_cache.add(filename)
+                full_path_executable_cache[filename] = full_path
+
 def is_executable(path):
     """Check if the given path is an executable file.
         Args:
@@ -13,20 +26,6 @@ def is_executable(path):
             bool: True if the file is executable, False otherwise.
     """
     return os.path.isfile(path) and os.access(path, os.X_OK)
-
-
-def find_file(filename):
-    """Find an executable file in the system PATH.
-        Args:
-            filename (str): The name of the file to find.
-        Returns:
-            str: The full path to the executable file if found, None otherwise.
-    """
-    for directory in os.environ["PATH"].split(os.pathsep):
-        full_path = os.path.join(directory, filename)
-        if is_executable(full_path):
-            return full_path
-    return None
 
 
 def run_subprocess(command, args):
@@ -38,8 +37,7 @@ def run_subprocess(command, args):
             tuple: A tuple containing the stdout and stderr output of the command.
     """
     try:
-        executable_name = os.path.basename(command)
-        result = subprocess.run([executable_name] + args, capture_output=True, text=True, check=True)
+        result = subprocess.run([command] + args, capture_output=True, text=True, check=True)
         return result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr
@@ -66,10 +64,11 @@ def type_handler(args, commands):
     if not args:
         return "", "type: missing argument\n"
     command_name = args[0]
+    full_command = full_path_executable_cache.get(command_name)
     if command_name in commands and command_name != "cat":
         return f"{command_name} is a shell builtin\n", ""
-    elif (full_path := find_file(command_name)) is not None:
-        return f"{command_name} is {full_path}\n", ""
+    elif full_command:
+        return f"{command_name} is {full_command}\n", ""
     else:
         return "", f"{command_name}: not found\n"
 
@@ -187,13 +186,18 @@ def command_completer(text, index):
     """
     commands = ["exit ", "echo ", "type ", "pwd ", "cd ", "cat "]
     matches = [command for command in commands if command.startswith(text)]
+    matches_executables = [command for command in executable_cache if command.startswith(text)]
 
-    if not matches and index == 0:
+    if not matches and not matches_executables and index == 0:
         sys.stdout.write('\a')
         sys.stdout.flush()
         return None
 
-    return matches[index] if matches else None
+    if matches:
+        return matches[index]
+    elif matches_executables:
+        return matches_executables[index]
+    return None
 
 readline.parse_and_bind("tab: complete")
 readline.set_completer(command_completer)
@@ -204,6 +208,8 @@ def main():
         Supports other bash commands as executables.
         Supports output and error redirection to files.
     """
+    get_executables()
+
     commands = {
         "exit": lambda arguments: sys.exit(0),
         "echo": echo_handler,
@@ -229,9 +235,8 @@ def main():
             if cmd in commands:
                 stdout, stderr = commands[cmd](filtered_args)
             else:
-                full_path = find_file(cmd)
-                if full_path:
-                    stdout, stderr = run_subprocess(full_path, filtered_args)
+                if cmd in executable_cache:
+                    stdout, stderr = run_subprocess(cmd, filtered_args)
                 else:
                     stdout, stderr = "", f"{cmd}: command not found\n"
 
